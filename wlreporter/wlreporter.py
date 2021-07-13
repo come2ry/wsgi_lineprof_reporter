@@ -207,7 +207,7 @@ def parse(profiler_log_name):
        226                         FROM histories as h
     :
        249         1        23970                                            total_pay=total_pay, current_user=current_user())
-    
+
     File:
     """
     empty_pattern = re.compile("^\s*$")
@@ -464,16 +464,22 @@ def report(db, report_file_name_prefix, exclude_pattern_list, is_verbose):
             1, 2
         """
 
+    # add graph column
+    exclude_pattern_data = parse_exclude_patterns(exclude_pattern_list)
+
     # sqlite.Row is better, but i need dict.(ie. add custom column data)
     summary_data = [dict(row) for row in db.execute(func_list_with_time_sql).fetchall()]  # type: list[dict]
     # add graph column
     line_data = [dict(row) for row in db.execute(whole_line_with_time_sql).fetchall()]  # type: list[dict]
+    # exclude file
+    line_data = [row for row in line_data
+                if (row["file_name"], "*") not in exclude_pattern_data]
 
     # add graph column
     exclude_pattern_data = parse_exclude_patterns(exclude_pattern_list)
     if exclude_pattern_data:
         max_time = max([row["total_time"] for row in line_data
-                        if (row["file_name"], "*") not in exclude_pattern_data and (row["file_name"], row["line"]) not in exclude_pattern_data])
+                        if (row["file_name"], row["line"]) not in exclude_pattern_data])
     else:
         max_time = max([row["total_time"] for row in line_data])
 
@@ -516,5 +522,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
